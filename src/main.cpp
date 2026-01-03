@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <utility>
+#include <complex>
 
 #include "CLI/CLI.hpp"
 
@@ -239,7 +240,45 @@ void on_key_z_pressed(GLFWwindow* window)
 /////////////////////////////////////////////////////////////////////////
 // Empty slots for the students
 
-void on_key_f_pressed(GLFWwindow* window) {}
+void on_key_f_pressed(GLFWwindow* window) {
+    constexpr double PI = 3.141592653589793;
+    std::vector<double> xs = plot_data.xs;
+    std::vector<double> ys = plot_data.ys;
+
+    int N = xs.size();
+    std::vector<std::complex<double>> dftResult;
+
+    for (int k = 0; k < N; k++)
+    {
+        std::complex<double> Ak;
+        for (int n = 0; n < N; n++)
+        {
+            // calculate wN
+            std::complex<double> w = exp(2. * PI * std::complex(0., 1.) / (double)N);
+            Ak += xs[n] *pow(w, -k * n);
+        }
+        dftResult.push_back(Ak);
+        
+    }
+
+
+    plot_data.plot_name = L"sin";
+    plot_data.line_type = L"solid";
+    plot_data.rgb[0] = 0.0;
+    plot_data.rgb[1] = 0.0;
+    plot_data.rgb[2] = 1.0;
+
+    GenerateContinuousPlotFromFunc(
+        "plot.png", [](double x) { return sinf((float)x); }, 64, -PI * 2.0,
+        PI * 2.0);
+
+    reloadTexture(window, "plot.png");
+    FinishContinuousPlot();
+    points_->vertices.clear();
+    plot_data.xs.clear();
+    plot_data.ys.clear();
+    updateRenderObject(points_.get());
+}
 
 void on_key_g_pressed(GLFWwindow* window) {}
 
