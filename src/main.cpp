@@ -361,12 +361,19 @@ void on_key_f_pressed(GLFWwindow* window) {
     //}
 
     // Draw plot from approximation
-    if (!GeneratePlotFromPoints(plot_filename_, plot_data.xs, best_approx))
+    /*if (!GeneratePlotFromPoints(plot_filename_, plot_data.xs, best_approx))
     {
         std::cerr << "Failed to generate initial plot image." << std::endl;
-    }
+    }*/
+
+    GenerateContinuousPlotFromFunc(
+        "plot.png", [&a,&b,&a0](double x) { return F((float)x,a0,a,b); }, 64, -PI * 2.0,
+        PI * 2.0);
+
+    FinishContinuousPlot();
 
     reloadTexture(window, "plot.png");
+    
     
     points_->vertices.clear();
     plot_data.xs.clear();
