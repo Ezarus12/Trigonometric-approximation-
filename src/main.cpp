@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+﻿#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <iostream>
@@ -240,27 +240,113 @@ void on_key_z_pressed(GLFWwindow* window)
 /////////////////////////////////////////////////////////////////////////
 // Empty slots for the students
 
+double F(double x,double a0, const std::vector<double>& a, const std::vector<double>& b)
+{
+    double sum = 0;
+    for (int j = 1; j < a.size(); j++)
+    {
+        sum += (a[j] * cos(j * x)) + (b[j] * sin(j * x));
+    }
+    return (a0 / 2.) + sum;
+}
+
+double mse(const std::vector<double>& original, const std::vector<double>& approx) {
+    double sum = 0;
+    for (int i = 0; i < original.size(); i++)
+    {
+        sum += (original[i] - approx[i]) * (original[i] - approx[i]);
+    }
+    return sum / (double)original.size();
+}
+
 void on_key_f_pressed(GLFWwindow* window) {
     constexpr double PI = 3.141592653589793;
     std::vector<double> xs = plot_data.xs;
     std::vector<double> ys = plot_data.ys;
+    std::vector<double> a;
+    std::vector<double> b;
+    std::vector<double> best_approx;
+    double best_error = DBL_MAX;
+    constexpr int MAX_M = 10;
 
-    int N = xs.size();
-    std::vector<std::complex<double>> dftResult;
-
-    for (int k = 0; k < N; k++)
+    if (ys.size() % 2 != 0)
     {
-        std::complex<double> Ak;
-        for (int n = 0; n < N; n++)
-        {
-            // calculate wN
-            std::complex<double> w = exp(2. * PI * std::complex(0., 1.) / (double)N);
-            Ak += xs[n] *pow(w, -k * n);
-        }
-        dftResult.push_back(Ak);
-        
+        std::cout << "Not even number of points!" << std::endl;
+        return;
     }
 
+    //2N = ys.size()
+    int N = ys.size()/2;
+    // find a0
+    double a0 = 0;
+    for (int i = 0; i < N*2; i++)
+    {
+        a0 += ys[i];
+    }
+    a0 /= 2. * (double)N;
+
+    for (int m = 0; m < MAX_M; m++)
+    {   
+        a.clear();
+        a.push_back(0); // dummy value
+        b.clear();
+        b.push_back(0); //dummy value
+        // ok find wielomian stopnia m
+        for (int j = 1; j < m; j++)
+        {
+            // find aj
+            double aj = 0;
+            for (int i = 0; i < ys.size(); i++)
+            {
+                aj += ys[i] * cos(PI * i * j / (double)N);
+            }
+            aj /= (double)N;
+            a.push_back(aj);
+
+            // find bj
+            double bj = 0;
+            for (int i = 0; i < ys.size(); i++)
+            {
+                bj += ys[i] * sin(PI * i * j / (double)N);
+            }
+            bj /= (double)N;
+            b.push_back(bj);
+        }
+        //calculate approximation
+        std::vector<double> approx;
+        for (int i = 0; i < xs.size(); i++)
+        {
+            approx.push_back(F(xs[i], a0, a, b));
+        }
+        
+        //check error
+        double error = mse(ys, approx);
+        std::cout << "stopien: " << m << " blad: " << error << std::endl;
+
+        //replace if current approx is better than best_approx
+        if (best_error > error)
+        {
+            best_error = error;
+            best_approx = approx;
+        }
+       
+    }
+
+    //int N = xs.size();
+    //std::vector<std::complex<double>> dftResult;
+
+    //for (int k = 0; k < N; k++)
+    //{
+    //    std::complex<double> Ak;
+    //    for (int n = 0; n < N; n++)
+    //    {
+    //        // calculate wN
+    //        std::complex<double> w = exp(2. * PI * std::complex(0., 1.) / (double)N);
+    //        Ak += xs[n] *pow(w, -k * n);
+    //    }
+    //    dftResult.push_back(Ak);
+    //    
+    //}
 
     plot_data.plot_name = L"sin";
     plot_data.line_type = L"solid";
@@ -268,12 +354,20 @@ void on_key_f_pressed(GLFWwindow* window) {
     plot_data.rgb[1] = 0.0;
     plot_data.rgb[2] = 1.0;
 
-    GenerateContinuousPlotFromFunc(
-        "plot.png", [](double x) { return sinf((float)x); }, 64, -PI * 2.0,
-        PI * 2.0);
+    //Draw plot from points
+    //if (!GeneratePlotFromPoints(plot_filename_, plot_data.xs, plot_data.ys))
+    //{
+    //    std::cerr << "Failed to generate initial plot image." << std::endl;
+    //}
+
+    // Draw plot from approximation
+    if (!GeneratePlotFromPoints(plot_filename_, plot_data.xs, best_approx))
+    {
+        std::cerr << "Failed to generate initial plot image." << std::endl;
+    }
 
     reloadTexture(window, "plot.png");
-    FinishContinuousPlot();
+    
     points_->vertices.clear();
     plot_data.xs.clear();
     plot_data.ys.clear();
