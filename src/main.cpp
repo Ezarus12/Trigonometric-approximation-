@@ -381,7 +381,90 @@ void on_key_f_pressed(GLFWwindow* window) {
     updateRenderObject(points_.get());
 }
 
-void on_key_g_pressed(GLFWwindow* window) {}
+void on_key_g_pressed(GLFWwindow* window)
+{
+    if (plot_data.ys.size() < 2 || plot_data.ys.size() % 2 != 0)
+    {
+        std::cerr << "Not even number of points!" << std::endl;
+        return;
+    }
+
+    const double PI = 3.141592653589793;
+    int N_points = plot_data.ys.size();
+    int N = N_points / 2;
+    
+    int MAX_M = (N > 20) ? 20 : N - 1;
+
+    std::vector<double> x_axis_harmonics;
+    std::vector<double> y_axis_error;
+
+    double a0 = 0;
+    for (int i = 0; i < N_points; i++)
+    {
+        a0 += plot_data.ys[i];
+    }
+    a0 = a0 / (double)N_points;
+
+    std::vector<double> a_coeffs = {0};
+    std::vector<double> b_coeffs = {0};
+
+    //Error for m = 0
+    std::vector<double> approx_0;
+    for (double val : plot_data.xs) approx_0.push_back(a0);
+
+    double error_0 = mse(plot_data.ys, approx_0);
+    x_axis_harmonics.push_back(0);
+    y_axis_error.push_back(error_0);
+
+    //the rest of the harmonics
+    for (int m = 1; m <= MAX_M; m++)
+    {
+        double aj = 0;
+        double bj = 0;
+
+        for (int i = 0; i < N_points; i++)
+        {
+            aj += plot_data.ys[i] * cos(PI * i * m / (double)N);
+            bj += plot_data.ys[i] * sin(PI * i * m / (double)N);
+        }
+        aj /= (double)N;
+        bj /= (double)N;
+
+        a_coeffs.push_back(aj);
+        b_coeffs.push_back(bj);
+
+        std::vector<double> current_approx;
+
+        for (int i = 0; i < plot_data.xs.size(); i++)
+        {
+            current_approx.push_back(F(plot_data.xs[i], a0 * 2.0, a_coeffs, b_coeffs));
+        }
+
+        double error = mse(plot_data.ys, current_approx);
+
+        x_axis_harmonics.push_back((double)m);
+        y_axis_error.push_back(error);
+
+        std::cout << "stopien: " << m << " blad: " << error << std::endl;
+    }
+
+    plot_data.plot_name = L"Wykres bledu (MSE)";
+    plot_data.line_type = L"solid";
+    
+    plot_data.rgb[0] = 1.0; 
+    plot_data.rgb[1] = 0.0;
+    plot_data.rgb[2] = 0.0;
+
+    if (!GeneratePlotFromPoints("plot.png", x_axis_harmonics, y_axis_error))
+    {
+        std::cerr << "Błąd generowania wykresu błędu." << std::endl;
+    }
+
+    reloadTexture(window, "plot.png");
+
+    points_->vertices.clear();
+    updateRenderObject(points_.get());
+}
 
 // clear user interaction buffers
 void on_key_clear(GLFWwindow* window)
