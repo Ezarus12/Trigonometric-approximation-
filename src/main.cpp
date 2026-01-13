@@ -389,32 +389,41 @@ void on_key_g_pressed(GLFWwindow* window)
         return;
     }
 
-    const double PI = 3.141592653589793;
-    int N_points = plot_data.ys.size();
-    int N = N_points / 2;
+    double PI = 3.141592653589793;
     
+    const std::vector<double>& ys = plot_data.ys;
+    int total_points = ys.size();
+    int N = total_points / 2;
     int MAX_M = (N > 20) ? 20 : N - 1;
 
-    std::vector<double> x_axis_harmonics;
-    std::vector<double> y_axis_error;
+    //Plot data containers
+    std::vector<double> harmonics_count_x;
+    std::vector<double> mse_error_y;
 
+    //Calc a0
     double a0 = 0;
-    for (int i = 0; i < N_points; i++)
+    for (double val : ys)
     {
-        a0 += plot_data.ys[i];
+        a0 += val;
     }
-    a0 = a0 / (double)N_points;
+    a0 = a0 / (double)total_points;
 
     std::vector<double> a_coeffs = {0};
     std::vector<double> b_coeffs = {0};
 
     //Error for m = 0
-    std::vector<double> approx_0;
-    for (double val : plot_data.xs) approx_0.push_back(a0);
+    double sum_sq_diff = 0; //sum of all (val - avg)^2
+    for (double val : ys)
+    {
+        double diff = val - a0;
+        sum_sq_diff += diff * diff;
+    }
+    double mse_0 = sum_sq_diff / (double)total_points;
+    
+    harmonics_count_x.push_back(0.0);
+    mse_error_y.push_back(mse_0);
+    std::cout << "M=0 , MSE: " << mse_0 << std::endl;
 
-    double error_0 = mse(plot_data.ys, approx_0);
-    x_axis_harmonics.push_back(0);
-    y_axis_error.push_back(error_0);
 
     //the rest of the harmonics
     for (int m = 1; m <= MAX_M; m++)
@@ -422,10 +431,10 @@ void on_key_g_pressed(GLFWwindow* window)
         double aj = 0;
         double bj = 0;
 
-        for (int i = 0; i < N_points; i++)
+        for (int i = 0; i < total_points; i++)
         {
-            aj += plot_data.ys[i] * cos(PI * i * m / (double)N);
-            bj += plot_data.ys[i] * sin(PI * i * m / (double)N);
+            aj += ys[i] * cos(PI * i * m / (double)N);
+            bj += ys[i] * sin(PI * i * m / (double)N);
         }
         aj /= (double)N;
         bj /= (double)N;
@@ -433,29 +442,31 @@ void on_key_g_pressed(GLFWwindow* window)
         a_coeffs.push_back(aj);
         b_coeffs.push_back(bj);
 
-        std::vector<double> current_approx;
+        double current_mse = 0;
+        for (int i = 0; i < total_points; i++){
+            double phase = PI * i / (double)N;
 
-        for (int i = 0; i < plot_data.xs.size(); i++)
-        {
-            current_approx.push_back(F(plot_data.xs[i], a0 * 2.0, a_coeffs, b_coeffs));
+            double approx_val = F(phase, a0*2, a_coeffs, b_coeffs); // a0*2 bc "a0/2" in F function
+            double diff = ys[i] - approx_val;
+            current_mse += diff * diff;
         }
+        
+        current_mse /= double(total_points);
 
-        double error = mse(plot_data.ys, current_approx);
+        harmonics_count_x.push_back((double)m);
+        mse_error_y.push_back(current_mse);
 
-        x_axis_harmonics.push_back((double)m);
-        y_axis_error.push_back(error);
-
-        std::cout << "stopien: " << m << " blad: " << error << std::endl;
+        std::cout << "M=" << m << ", MSE: " << current_mse << std::endl;
     }
 
-    plot_data.plot_name = L"Wykres bledu (MSE)";
+    plot_data.plot_name = L"Wykres (MSE) od liczb harmonicznych";
     plot_data.line_type = L"solid";
     
     plot_data.rgb[0] = 1.0; 
     plot_data.rgb[1] = 0.0;
     plot_data.rgb[2] = 0.0;
 
-    if (!GeneratePlotFromPoints("plot.png", x_axis_harmonics, y_axis_error))
+    if (!GeneratePlotFromPoints("plot.png", harmonics_count_x, mse_error_y))
     {
         std::cerr << "Błąd generowania wykresu błędu." << std::endl;
     }
