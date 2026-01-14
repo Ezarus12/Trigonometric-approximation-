@@ -354,6 +354,11 @@ void on_key_f_pressed(GLFWwindow* window) {
     plot_data.rgb[1] = 0.0;
     plot_data.rgb[2] = 1.0;
 
+    plot_data.range_x_min = -10.0f;
+    plot_data.range_x_max = 10.0f;
+    plot_data.range_y_min = -10.0f;
+    plot_data.range_y_max = 10.0f;
+
     //Draw plot from points
     //if (!GeneratePlotFromPoints(plot_filename_, plot_data.xs, plot_data.ys))
     //{
@@ -375,9 +380,10 @@ void on_key_f_pressed(GLFWwindow* window) {
     reloadTexture(window, "plot.png");
     
     
-    points_->vertices.clear();
-    plot_data.xs.clear();
-    plot_data.ys.clear();
+    //points_->vertices.clear();
+    //plot_data.xs.clear();
+    //plot_data.ys.clear();
+    
     updateRenderObject(points_.get());
 }
 
@@ -394,7 +400,7 @@ void on_key_g_pressed(GLFWwindow* window)
     const std::vector<double>& ys = plot_data.ys;
     int total_points = ys.size();
     int N = total_points / 2;
-    int MAX_M = (N > 20) ? 20 : N - 1;
+    int MAX_M = N;
 
     //Plot data containers
     std::vector<double> harmonics_count_x;
