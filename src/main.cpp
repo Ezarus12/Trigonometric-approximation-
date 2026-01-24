@@ -269,7 +269,7 @@ void on_key_f_pressed(GLFWwindow* window) {
     double best_error = DBL_MAX;
     constexpr int MAX_M = 10;
 
-    if (ys.size() % 2 != 0)
+    if (ys.size() < 2 || ys.size() % 2 != 0)
     {
         std::cout << "Not even number of points!" << std::endl;
         return;
@@ -292,7 +292,7 @@ void on_key_f_pressed(GLFWwindow* window) {
         b.clear();
         b.push_back(0); //dummy value
         // ok find wielomian stopnia m
-        for (int j = 1; j < m; j++)
+        for (int j = 1; j <= m; j++)
         {
             // find aj
             double aj = 0;
@@ -316,7 +316,7 @@ void on_key_f_pressed(GLFWwindow* window) {
         std::vector<double> approx;
         for (int i = 0; i < xs.size(); i++)
         {
-            approx.push_back(F(xs[i], a0, a, b));
+            approx.push_back(F(xs[i], a0 * 2, a, b));
         }
         
         //check error
@@ -450,9 +450,10 @@ void on_key_g_pressed(GLFWwindow* window)
 
         double current_mse = 0;
         for (int i = 0; i < total_points; i++){
-            double phase = PI * i / (double)N;
+            double x_val = plot_data.xs[i]; 
 
-            double approx_val = F(phase, a0*2, a_coeffs, b_coeffs); // a0*2 bc "a0/2" in F function
+            double approx_val = F(x_val, a0 * 2.0, a_coeffs, b_coeffs); 
+            
             double diff = ys[i] - approx_val;
             current_mse += diff * diff;
         }
