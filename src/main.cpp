@@ -321,7 +321,7 @@ void on_key_f_pressed(GLFWwindow* window) {
         
         //check error
         double error = mse(ys, approx);
-        std::cout << "stopien: " << m << " blad: " << error << std::endl;
+        std::cout << "harmonicznych: " << m << " MSE: " << error << std::endl;
 
         //replace if current approx is better than best_approx
         if (best_error > error)
@@ -400,7 +400,7 @@ void on_key_g_pressed(GLFWwindow* window)
     const std::vector<double>& ys = plot_data.ys;
     int total_points = ys.size();
     int N = total_points / 2;
-    int MAX_M = N;
+    int MAX_M = 10 - 1;
 
     //Plot data containers
     std::vector<double> harmonics_count_x;
@@ -428,7 +428,7 @@ void on_key_g_pressed(GLFWwindow* window)
     
     harmonics_count_x.push_back(0.0);
     mse_error_y.push_back(mse_0);
-    std::cout << "M=0 , MSE: " << mse_0 << std::endl;
+    std::cout << "harmonicznych: 0 MSE: " << mse_0 << std::endl;
 
 
     //the rest of the harmonics
@@ -463,7 +463,7 @@ void on_key_g_pressed(GLFWwindow* window)
         harmonics_count_x.push_back((double)m);
         mse_error_y.push_back(current_mse);
 
-        std::cout << "M=" << m << ", MSE: " << current_mse << std::endl;
+        std::cout << "harmonicznych: " << m << " MSE: " << current_mse << std::endl;
     }
 
     plot_data.plot_name = L"Wykres (MSE) od liczb harmonicznych";
